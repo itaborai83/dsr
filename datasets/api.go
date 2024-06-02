@@ -153,7 +153,7 @@ func AddBatchToDataSetHandler(w http.ResponseWriter, r *http.Request) {
 		utils.CreateApiResponse(w, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	utils.CreateApiResponse(w, http.StatusCreated, "success", batch)
+	utils.CreateApiResponse(w, http.StatusCreated, "success", nil)
 }
 
 func DeleteBatchFromDataSetHandler(w http.ResponseWriter, r *http.Request) {

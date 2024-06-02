@@ -40,6 +40,52 @@ func NewBatchService(repo common.Repo, specService *specs.SpecService) *BatchSer
 	return &BatchService{repo: repo, specService: specService}
 }
 
+func (b *BatchService) saveBatch(batch *Batch) error {
+	now := utils.GetNow()
+	if batch.CreatedAt == "" {
+		batch.CreatedAt = now
+		batch.UpdatedAt = now
+		data, err := json.Marshal(batch)
+		if err != nil {
+			return fmt.Errorf("error marshalling batch: %v", err)
+		}
+		err = b.repo.CreateEntry(batch.Id, data)
+		if err != nil {
+			return fmt.Errorf("error creating batch: %v", err)
+		}
+	} else {
+		batch.UpdatedAt = now
+		data, err := json.Marshal(batch)
+		if err != nil {
+			return fmt.Errorf("error marshalling batch: %v", err)
+		}
+		err = b.repo.UpdateEntry(batch.Id, data)
+		if err != nil {
+			return fmt.Errorf("error updating batch: %v", err)
+		}
+	}
+	return nil
+}
+
+func (b *BatchService) loadBatch(batchId string) (*Batch, error) {
+	err := utils.ValidateId(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error validating batch id: %v", err)
+	}
+
+	data, err := b.repo.GetEntry(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error getting batch: %v", err)
+	}
+
+	var batch Batch
+	err = json.Unmarshal(data, &batch)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling batch: %v", err)
+	}
+	return &batch, nil
+}
+
 func (b *BatchService) validateAgainstSpec(batch Batch) error {
 
 	exists, err := b.specService.DoesSpecExist(batch.SpecId)
@@ -67,19 +113,21 @@ func (b *BatchService) DoesBatchExist(batchId string) (bool, error) {
 }
 
 func (b *BatchService) GetBatch(batchId string) (*Batch, error) {
-	data, err := b.repo.GetEntry(batchId)
+	exists, err := b.DoesBatchExist(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if batch exists: %v", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("batch does not exist: %s", batchId)
+	}
+	batch, err := b.loadBatch(batchId)
 	if err != nil {
 		return nil, fmt.Errorf("error getting batch: %v", err)
 	}
-	var batch Batch
-	err = json.Unmarshal(data, &batch)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling batch: %v", err)
-	}
-	return &batch, nil
+	return batch, nil
 }
 
-func (b *BatchService) CreateBatch(batch *Batch) error {
+func (b *BatchService) validateBatchCreation(batch *Batch) error {
 	err := ValidateBatch(batch)
 	if err != nil {
 		return fmt.Errorf("error validating batch: %v", err)
@@ -91,27 +139,27 @@ func (b *BatchService) CreateBatch(batch *Batch) error {
 	if exists {
 		return fmt.Errorf("batch already exists: %s", batch.Id)
 	}
+	return nil
+}
 
+func (b *BatchService) CreateBatch(batch *Batch) error {
+	err := b.validateBatchCreation(batch)
+	if err != nil {
+		return err
+	}
 	err = b.validateAgainstSpec(*batch)
 	if err != nil {
-		return fmt.Errorf("error validating batch against spec: %v", err)
+		return err
 	}
 
-	now := utils.GetNow()
-	batch.CreatedAt = now
-	batch.UpdatedAt = now
-	data, err := json.Marshal(batch)
+	err = b.saveBatch(batch)
 	if err != nil {
-		return fmt.Errorf("error marshalling batch: %v", err)
-	}
-	err = b.repo.CreateEntry(batch.Id, data)
-	if err != nil {
-		return fmt.Errorf("error creating batch: %v", err)
+		return fmt.Errorf("error saving batch: %v", err)
 	}
 	return nil
 }
 
-func (b *BatchService) UpdateBatch(batchId string, batch *Batch) error {
+func (b *BatchService) validateBatchUpdate(batchId string, batch *Batch) error {
 	if batchId != batch.Id {
 		return fmt.Errorf("batch id mismatch")
 	}
@@ -129,31 +177,42 @@ func (b *BatchService) UpdateBatch(batchId string, batch *Batch) error {
 		return fmt.Errorf("batch does not exist: %s", batchId)
 	}
 
+	return nil
+}
+
+func (b *BatchService) UpdateBatch(batchId string, batch *Batch) error {
+	err := b.validateBatchUpdate(batchId, batch)
+	if err != nil {
+		return err
+	}
+
 	err = b.validateAgainstSpec(*batch)
 	if err != nil {
 		return fmt.Errorf("error validating batch against spec: %v", err)
 	}
 
-	now := utils.GetNow()
-	batch.UpdatedAt = now
-	data, err := json.Marshal(batch)
+	err = b.saveBatch(batch)
 	if err != nil {
-		return fmt.Errorf("error marshalling batch: %v", err)
-	}
-	err = b.repo.UpdateEntry(batchId, data)
-	if err != nil {
-		return fmt.Errorf("error updating batch: %v", err)
+		return fmt.Errorf("error saving batch: %v", err)
 	}
 	return nil
 }
 
-func (b *BatchService) DeleteBatch(batchId string) error {
+func (b *BatchService) validateBatchDeletion(batchId string) error {
 	exists, err := b.DoesBatchExist(batchId)
 	if err != nil {
 		return fmt.Errorf("error checking if batch exists: %v", err)
 	}
 	if !exists {
 		return fmt.Errorf("batch does not exist: %s", batchId)
+	}
+	return nil
+}
+
+func (b *BatchService) DeleteBatch(batchId string) error {
+	err := b.validateBatchDeletion(batchId)
+	if err != nil {
+		return err
 	}
 	err = b.repo.DeleteEntry(batchId)
 	if err != nil {

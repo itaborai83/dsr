@@ -84,7 +84,7 @@ func CreateBatchHandler(w http.ResponseWriter, r *http.Request) {
 		utils.CreateApiResponse(w, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
-	utils.CreateApiResponse(w, http.StatusCreated, "success", batch)
+	utils.CreateApiResponse(w, http.StatusCreated, "success", nil)
 }
 
 func RegisterRoutes() error {
@@ -92,9 +92,5 @@ func RegisterRoutes() error {
 	router := conf.Router
 	router.HandleFunc("/api/v1/batches", GetAllBatchIds).Methods("GET")
 	router.HandleFunc("/api/v1/batches/{batchId}", GetBatchHandler).Methods("GET")
-	router.HandleFunc("/api/v1/batches", CreateBatchHandler).Methods("POST")
-	//router.HandleFunc("/api/v1/batches/{batchId}", UpdateBatchHandler).Methods("PUT")
-	//router.HandleFunc("/api/v1/batches/{batchId}", DeleteBatchHandler).Methods("DELETE")
-
 	return nil
 }
