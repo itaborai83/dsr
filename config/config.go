@@ -38,14 +38,18 @@ type Config struct {
 	DataDir             string
 	SpecsDir            string
 	BatchesDir          string
-	DatasetsDir         string
+	DataSetsDir         string
 	ReconciliationsDir  string
 	SpecEntry           string
 	BatchEntry          string
-	DatasetEntry        string
+	DataSetEntry        string
 	ReconciliationEntry string
 	SpecRepo            interface{}
 	SpecService         interface{}
+	BatchRepo           interface{}
+	BatchService        interface{}
+	DataSetsRepo        interface{}
+	DataSetService      interface{}
 }
 
 func getEnv(key, defaultValue string) string {
@@ -64,14 +68,18 @@ func newConfig() *Config {
 		DataDir:             getEnv(ENV_DATA_DIR, DEFAULT_DATA_DIR),
 		SpecsDir:            getEnv(ENV_SPECS_DIR, DEFAULT_SPECS_DIR),
 		BatchesDir:          getEnv(ENV_BATCHES_DIR, DEFAULT_BATCHES_DIR),
-		DatasetsDir:         getEnv(ENV_DATASETS_DIR, DEFAULT_DATASETS_DIR),
+		DataSetsDir:         getEnv(ENV_DATASETS_DIR, DEFAULT_DATASETS_DIR),
 		ReconciliationsDir:  getEnv(ENV_RECONCILIATIONS_DIR, DEFAULT_RECONCILIATIONS_DIR),
 		SpecEntry:           getEnv(ENV_SPEC_ENTRY, DEFAULT_SPEC_ENTRY),
 		BatchEntry:          getEnv(ENV_BATCH_ENTRY, DEFAULT_BATCH_ENTRY),
-		DatasetEntry:        getEnv(ENV_DATASET_ENTRY, DEFAULT_DATASET_ENTRY),
+		DataSetEntry:        getEnv(ENV_DATASET_ENTRY, DEFAULT_DATASET_ENTRY),
 		ReconciliationEntry: getEnv(ENV_RECONCILIATION_ENTRY, DEFAULT_RECONCILIATION_ENTRY),
 		SpecRepo:            nil,
 		SpecService:         nil,
+		BatchRepo:           nil,
+		BatchService:        nil,
+		DataSetsRepo:        nil,
+		DataSetService:      nil,
 	}
 }
 

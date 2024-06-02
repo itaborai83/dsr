@@ -56,6 +56,15 @@ func (s *SpecService) CreateSpec(spec *TableSpec) error {
 	if err != nil {
 		return fmt.Errorf("error validating spec: %v", err)
 	}
+
+	exists, err := s.DoesSpecExist(spec.Id)
+	if err != nil {
+		return fmt.Errorf("error checking if spec exists: %v", err)
+	}
+	if exists {
+		return fmt.Errorf("spec already exists: %s", spec.Id)
+	}
+
 	now := utils.GetNow()
 	spec.CreatedAt = now
 	spec.UpdatedAt = now
@@ -79,6 +88,15 @@ func (s *SpecService) UpdateSpec(specId string, spec *TableSpec) error {
 	if err != nil {
 		return fmt.Errorf("error validating spec: %v", err)
 	}
+
+	exists, err := s.DoesSpecExist(specId)
+	if err != nil {
+		return fmt.Errorf("error checking if spec exists: %v", err)
+	}
+	if !exists {
+		return fmt.Errorf("spec does not exist: %s", specId)
+	}
+
 	now := utils.GetNow()
 	spec.UpdatedAt = now
 	data, err := json.Marshal(spec)

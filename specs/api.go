@@ -29,7 +29,6 @@ func GetAllSpecsHandler(w http.ResponseWriter, r *http.Request) {
 		utils.CreateApiResponse(w, http.StatusInternalServerError, err.Error(), nil)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
 	utils.CreateApiResponse(w, http.StatusOK, "success", specs)
 }
 

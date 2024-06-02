@@ -1,0 +1,6 @@
+{
+    "id": "dataset-delegacoes-corporativas-v01-2024-06-01",
+	"name" : "Carga Delegações Corporativas - Origem",
+	"spec_id": "spec-delegacoes-corporativas-v01",
+    "batch_ids": []
+}

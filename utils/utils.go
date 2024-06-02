@@ -176,6 +176,37 @@ func ValidateId(id string) error {
 	return nil
 }
 
+func EqualStringsLists(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func RemoveStringFromList(list []string, item string) []string {
+	newList := make([]string, 0)
+	for _, v := range list {
+		if v != item {
+			newList = append(newList, v)
+		}
+	}
+	return newList
+}
+
+func StringInList(list []string, item string) bool {
+	for _, v := range list {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
+
 func LogRequest(r *http.Request) {
 	logger = GetLogger()
 	logger.Printf("Request: %s %s\n", r.Method, r.URL)
