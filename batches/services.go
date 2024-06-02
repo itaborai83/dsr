@@ -112,14 +112,27 @@ func (b *BatchService) DoesBatchExist(batchId string) (bool, error) {
 	return b.repo.DoesEntryExist(batchId)
 }
 
-func (b *BatchService) GetBatch(batchId string) (*Batch, error) {
+func (b *BatchService) validateGetBatch(batchId string) error {
+	err := utils.ValidateId(batchId)
+	if err != nil {
+		return fmt.Errorf("error validating batch id: %v", err)
+	}
 	exists, err := b.DoesBatchExist(batchId)
 	if err != nil {
-		return nil, fmt.Errorf("error checking if batch exists: %v", err)
+		return fmt.Errorf("error checking if batch exists: %v", err)
 	}
 	if !exists {
-		return nil, fmt.Errorf("batch does not exist: %s", batchId)
+		return fmt.Errorf("batch does not exist: %s", batchId)
 	}
+	return nil
+}
+
+func (b *BatchService) GetBatch(batchId string) (*Batch, error) {
+	err := b.validateGetBatch(batchId)
+	if err != nil {
+		return nil, err
+	}
+
 	batch, err := b.loadBatch(batchId)
 	if err != nil {
 		return nil, fmt.Errorf("error getting batch: %v", err)

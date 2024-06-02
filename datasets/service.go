@@ -111,13 +111,29 @@ func (d *DataSetService) validateSpecExists(dataSet DataSet) error {
 	return nil
 }
 
-func (d *DataSetService) GetDataSet(dataSetId string) (*DataSet, error) {
+func (d *DataSetService) validateGetDataSet(dataSetId string) error {
+	err := utils.ValidateId(dataSetId)
+	if err != nil {
+		return fmt.Errorf("error validating data set id: %v", err)
+	}
+
 	exists, err := d.DoesDataSetExist(dataSetId)
 	if err != nil {
-		return nil, fmt.Errorf("error checking if data set exists: %v", err)
+		return fmt.Errorf("error checking if data set exists: %v", err)
 	}
 	if !exists {
-		return nil, fmt.Errorf("data set does not exist: %s", dataSetId)
+		return fmt.Errorf("data set does not exist: %s", dataSetId)
+	}
+
+	return nil
+
+}
+
+func (d *DataSetService) GetDataSet(dataSetId string) (*DataSet, error) {
+
+	err := d.validateGetDataSet(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error validating data set: %v", err)
 	}
 
 	dataSet, err := d.loadDataSet(dataSetId)
@@ -127,11 +143,12 @@ func (d *DataSetService) GetDataSet(dataSetId string) (*DataSet, error) {
 	return dataSet, nil
 }
 
-func (d *DataSetService) CreateDataSet(dataSet *DataSet) error {
+func (d *DataSetService) validateCreation(dataSet *DataSet) error {
 	err := ValidateDataSet(dataSet)
 	if err != nil {
 		return fmt.Errorf("error validating data set: %v", err)
 	}
+
 	exists, err := d.DoesDataSetExist(dataSet.Id)
 	if err != nil {
 		return fmt.Errorf("error checking if data set exists: %v", err)
@@ -149,6 +166,16 @@ func (d *DataSetService) CreateDataSet(dataSet *DataSet) error {
 		return fmt.Errorf("data set cannot have batch ids on creation")
 	}
 
+	return nil
+}
+
+func (d *DataSetService) CreateDataSet(dataSet *DataSet) error {
+
+	err := d.validateCreation(dataSet)
+	if err != nil {
+		return fmt.Errorf("error validating data set: %v", err)
+	}
+
 	err = d.saveDataSet(dataSet)
 	if err != nil {
 		return fmt.Errorf("error saving data set: %v", err)
@@ -156,13 +183,27 @@ func (d *DataSetService) CreateDataSet(dataSet *DataSet) error {
 	return nil
 }
 
-func (d *DataSetService) DeleteDataSet(dataSetId string) error {
+func (d *DataSetService) validateDeletion(dataSetId string) error {
+	err := utils.ValidateId(dataSetId)
+	if err != nil {
+		return fmt.Errorf("error validating data set id: %v", err)
+	}
+
 	exists, err := d.DoesDataSetExist(dataSetId)
 	if err != nil {
 		return fmt.Errorf("error checking if data set exists: %v", err)
 	}
 	if !exists {
 		return fmt.Errorf("data set does not exist: %s", dataSetId)
+	}
+
+	return nil
+}
+
+func (d *DataSetService) DeleteDataSet(dataSetId string) error {
+	err := d.validateDeletion(dataSetId)
+	if err != nil {
+		return fmt.Errorf("error validating data set: %v", err)
 	}
 
 	dataSet, err := d.GetDataSet(dataSetId)
@@ -219,18 +260,61 @@ func (d *DataSetService) ListDataSets() ([]DataSet, error) {
 	return dataSets, nil
 }
 
-func (d *DataSetService) AddBatchToDataSet(dataSetId string, batch *batches.Batch) error {
+func (d *DataSetService) validateAddBatchToDataSet(dataSetId string, batch *batches.Batch) (*DataSet, error) {
+	err := utils.ValidateId(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error validating data set id: %v", err)
+	}
+
+	err = utils.ValidateId(batch.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error validating batch id: %v", err)
+	}
+
+	exists, err := d.DoesDataSetExist(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if data set exists: %v", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("data set does not exist: %s", dataSetId)
+	}
+
+	exists, err = d.BatchService.DoesBatchExist(batch.Id)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if batch exists: %v", err)
+	}
+	if exists {
+		return nil, fmt.Errorf("batch already exists: %s", batch.Id)
+	}
+
+	// get data set
 	dataSet, err := d.GetDataSet(dataSetId)
 	if err != nil {
-		return fmt.Errorf("error getting data set: %v", err)
+		return nil, fmt.Errorf("error getting data set: %v", err)
 	}
 
+	// check spec id
 	if batch.SpecId != dataSet.SpecId {
-		return fmt.Errorf("batch spec id mismatch")
+		return nil, fmt.Errorf("batch spec id mismatch")
 	}
 
+	// check if spec exists
+	err = d.validateSpecExists(*dataSet)
+	if err != nil {
+		return nil, fmt.Errorf("error validating spec: %v", err)
+	}
+
+	// check if batch is already in data set
 	if utils.StringInList(dataSet.BatchIds, batch.Id) {
-		return fmt.Errorf("batch already in data set: %s", batch.Id)
+		return nil, fmt.Errorf("batch already in data set: %s", batch.Id)
+	}
+	return dataSet, nil
+}
+
+func (d *DataSetService) AddBatchToDataSet(dataSetId string, batch *batches.Batch) error {
+	dataSet, err := d.validateAddBatchToDataSet(dataSetId, batch)
+	if err != nil {
+		return fmt.Errorf("error validating data set: %v", err)
 	}
 
 	err = d.BatchService.CreateBatch(batch)
@@ -247,7 +331,92 @@ func (d *DataSetService) AddBatchToDataSet(dataSetId string, batch *batches.Batc
 	return nil
 }
 
+func (d *DataSetService) validateRemoveBatchFromDataSet(dataSetId, batchId string) (*DataSet, error) {
+	err := utils.ValidateId(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error validating data set id: %v", err)
+	}
+
+	err = utils.ValidateId(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error validating batch id: %v", err)
+	}
+
+	exists, err := d.DoesDataSetExist(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if data set exists: %v", err)
+	}
+	if !exists {
+		return nil, fmt.Errorf("data set does not exist: %s", dataSetId)
+	}
+
+	exists, err = d.BatchService.DoesBatchExist(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error checking if batch exists: %v", err)
+	}
+	if exists {
+		return nil, fmt.Errorf("batch already exists: %s", batchId)
+	}
+
+	// get data set
+	dataSet, err := d.GetDataSet(dataSetId)
+	if err != nil {
+		return nil, fmt.Errorf("error getting data set: %v", err)
+	}
+	// get batch
+	batch, err := d.BatchService.GetBatch(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error getting batch: %v", err)
+	}
+	// check spec id
+	if batch.SpecId != dataSet.SpecId {
+		return nil, fmt.Errorf("batch spec id mismatch")
+	}
+
+	// check if spec exists
+	err = d.validateSpecExists(*dataSet)
+	if err != nil {
+		return nil, fmt.Errorf("error validating spec: %v", err)
+	}
+
+	// check if batch is already in data set
+	if utils.StringInList(dataSet.BatchIds, batchId) {
+		return nil, fmt.Errorf("batch already in data set: %s", batchId)
+	}
+	return dataSet, nil
+}
+
 func (d *DataSetService) RemoveBatchFromDataSet(dataSetId string, batchId string) error {
+	dataSet, err := d.validateRemoveBatchFromDataSet(dataSetId, batchId)
+	if err != nil {
+		return fmt.Errorf("error validating data set: %v", err)
+	}
+
+	err = d.BatchService.DeleteBatch(batchId)
+	if err != nil {
+		return fmt.Errorf("error deleting batch: %v", err)
+	}
+
+	dataSet.BatchIds = utils.RemoveStringFromList(dataSet.BatchIds, batchId)
+
+	err = d.saveDataSet(dataSet)
+	if err != nil {
+		return fmt.Errorf("error saving data set: %v", err)
+	}
+	return nil
+}
+
+func (d *DataSetService) validateGetBatchFromDataSet(dataSetId, batchId string) error {
+	err := utils.ValidateId(dataSetId)
+	if err != nil {
+		return fmt.Errorf("error validating data set id: %v", err)
+	}
+
+	err = utils.ValidateId(batchId)
+	if err != nil {
+		return fmt.Errorf("error validating batch id: %v", err)
+	}
+
 	dataSet, err := d.GetDataSet(dataSetId)
 	if err != nil {
 		return fmt.Errorf("error getting data set: %v", err)
@@ -257,36 +426,17 @@ func (d *DataSetService) RemoveBatchFromDataSet(dataSetId string, batchId string
 		return fmt.Errorf("batch not in data set: %s", batchId)
 	}
 
-	err = d.BatchService.DeleteBatch(batchId)
-	if err != nil {
-		return fmt.Errorf("error deleting batch: %v", err)
-	}
-
-	dataSet.BatchIds = utils.RemoveStringFromList(dataSet.BatchIds, batchId)
-	dataSet.UpdatedAt = utils.GetNow()
-
-	// save data set using the repo
-	data, err := json.Marshal(dataSet)
-	if err != nil {
-		return fmt.Errorf("error marshalling data set: %v", err)
-	}
-	err = d.repo.UpdateEntry(dataSetId, data)
-	if err != nil {
-		return fmt.Errorf("error updating data set: %v", err)
-	}
-
 	return nil
 }
 
 func (d *DataSetService) GetBatchFromDataSet(dataSetId, batchId string) (*batches.Batch, error) {
-	dataSet, err := d.GetDataSet(dataSetId)
+	err := d.validateGetBatchFromDataSet(dataSetId, batchId)
 	if err != nil {
-		return nil, fmt.Errorf("error getting data set: %v", err)
+		return nil, fmt.Errorf("error validating data set: %v", err)
 	}
-
-	if !utils.StringInList(dataSet.BatchIds, batchId) {
-		return nil, fmt.Errorf("batch not in data set: %s", batchId)
+	batch, err := d.BatchService.GetBatch(batchId)
+	if err != nil {
+		return nil, fmt.Errorf("error getting batch: %v", err)
 	}
-
-	return d.BatchService.GetBatch(batchId)
+	return batch, nil
 }
