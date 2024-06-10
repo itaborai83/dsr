@@ -23,7 +23,6 @@ func GetLogger() *log.Logger {
 		logger = log.New(os.Stdout, "", log.LstdFlags)
 	}
 	return logger
-
 }
 
 func GetNow() string {
@@ -52,7 +51,8 @@ func DirExists(folderPath string) bool {
 	return false
 }
 
-func ReadFile(filePath string) ([]byte, error) {
+func ReadFile(path, fileName string) ([]byte, error) {
+	filePath := path + "/" + fileName
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file: %s", err)
@@ -60,23 +60,43 @@ func ReadFile(filePath string) ([]byte, error) {
 	return data, nil
 }
 
-func WriteFile(filePath string, data []byte) error {
+func WriteFile(path, fileName string, data []byte) error {
+	exists, err := ValidateFolderExists(path)
+	if err != nil {
+		return fmt.Errorf("error validating folder: '%s'", err)
+	}
+	if !exists {
+		return fmt.Errorf("folder does not exist: '%s'", path)
+	}
+
+	filePath := path + "/" + fileName
 	// open file for writing
 	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("error creating file: %s", err)
+		return fmt.Errorf("error creating file: '%s'", err)
 	}
 	defer file.Close()
 	// write data to file
 	_, err = file.Write(data)
 	if err != nil {
-		return fmt.Errorf("error writing file: %s", err)
+		return fmt.Errorf("error writing file: '%s'", err)
 	}
 	return nil
 }
 
 func DeleteFolder(folderPath string) error {
-	err := os.RemoveAll(folderPath)
+	err := ValidateId(folderPath)
+	if err != nil {
+		return fmt.Errorf("error validating folder path: %s", err)
+	}
+	exists, err := ValidateFolderExists(folderPath)
+	if err != nil {
+		return fmt.Errorf("error validating folder: %s", err)
+	}
+	if !exists {
+		return fmt.Errorf("folder does not exist")
+	}
+	err = os.RemoveAll(folderPath)
 	if err != nil {
 		return fmt.Errorf("error deleting folder: %s", err)
 	}
@@ -99,49 +119,76 @@ func ListFolders(basePath string) ([]string, error) {
 	return subFolders, nil
 }
 
-func ValidateFileExists(basePath string, fileName string) error {
+func ValidateFileExists(basePath string, fileName string) (bool, error) {
 	err := ValidateId(fileName)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("error validating file name: %s", err)
 	}
 
-	err = ValidateFolderExists(basePath)
+	exists, err := ValidateFolderExists(basePath)
 	if err != nil {
-		return fmt.Errorf("base path folder does not exist: %s", err)
+		return false, fmt.Errorf("error validating folder: %s", err)
+	}
+	if !exists {
+		return false, nil
 	}
 
-	filePath := fmt.Sprintf("%s/%s", basePath, fileName)
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return fmt.Errorf("file does not exist")
+	filePath := basePath + "/" + fileName
+	fileInfo, err := os.Stat(filePath)
+	if err != nil && !os.IsNotExist(err) {
+		return false, fmt.Errorf("error checking file: %s", err)
 	}
-	return nil
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	if fileInfo.IsDir() {
+		return false, fmt.Errorf("file is a folder")
+	}
+
+	return exists, nil
 }
 
-func ValidateFolderExists(folderPath string) error {
+func ValidateFolderExists(folderPath string) (bool, error) {
 	err := ValidateId(folderPath)
 	if err != nil {
-		return err
+		return false, err
 	}
-	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
-		return fmt.Errorf("folder does not exist")
+	fileInfo, err := os.Stat(folderPath)
+	os.IsNotExist(err)
+	if err != nil && !os.IsNotExist(err) {
+		return false, fmt.Errorf("error checking folder: %s", err)
 	}
-	return nil
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if !fileInfo.IsDir() {
+		return false, fmt.Errorf("folder is a file")
+	}
+	return true, nil
 }
 
 func EnsureFolderExists(basePath string, folderName string) error {
 	err := ValidateId(folderName)
 	if err != nil {
-		return fmt.Errorf("error validating folder name: %s", err)
+		return fmt.Errorf("invalid folder name: '%s'", folderName)
 	}
 
-	err = ValidateFolderExists(basePath)
+	exists, err := ValidateFolderExists(basePath)
 	if err != nil {
-		return fmt.Errorf("base path does not exist: %s", err)
+		return fmt.Errorf("error validating folder: %s", err)
+	}
+	if !exists {
+		return fmt.Errorf("base folder does not exist")
 	}
 
-	folderPath := fmt.Sprintf("%s/%s", basePath, folderName)
-	err = ValidateFolderExists(folderPath)
-	if err == nil {
+	folderPath := basePath + "/" + folderName
+	exists, err = ValidateFolderExists(folderPath)
+	if err != nil {
+		return fmt.Errorf("error validating folder: %s", err)
+	}
+
+	if exists {
 		return nil
 	}
 
@@ -176,35 +223,19 @@ func ValidateId(id string) error {
 	return nil
 }
 
-func EqualStringsLists(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
+func ReverseStringList(list []string) []string {
+	result := make([]string, len(list))
+	for i := 0; i < len(list); i++ {
+		result[i] = list[len(list)-i-1]
 	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
+	return result
 }
 
-func RemoveStringFromList(list []string, item string) []string {
-	newList := make([]string, 0)
-	for _, v := range list {
-		if v != item {
-			newList = append(newList, v)
-		}
-	}
-	return newList
-}
-
-func StringInList(list []string, item string) bool {
-	for _, v := range list {
-		if v == item {
-			return true
-		}
-	}
-	return false
+func CopyPushString(list []string, item string) []string {
+	result := make([]string, len(list)+1)
+	copy(result, list)
+	result[len(list)] = item
+	return result
 }
 
 func LogRequest(r *http.Request) {

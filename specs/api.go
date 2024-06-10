@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/itaborai83/dsr/config"
+	"github.com/itaborai83/dsr/common"
 	"github.com/itaborai83/dsr/utils"
 )
 
 func getSpecService() *SpecService {
-	conf := config.GetConfig()
+	conf := common.GetConfig()
 	service := conf.SpecService.(*SpecService)
 	return service
 }
@@ -63,6 +63,8 @@ func GetSpecHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateSpecHandler(w http.ResponseWriter, r *http.Request) {
+	logger := utils.GetLogger()
+	logger.Printf("CreateSpecHandler")
 	utils.LogRequest(r)
 	service := getSpecService()
 	if service == nil {
@@ -70,7 +72,7 @@ func CreateSpecHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var spec TableSpec
+	var spec common.TableSpec
 	err := json.NewDecoder(r.Body).Decode(&spec)
 	if err != nil {
 		utils.CreateApiResponse(w, http.StatusInternalServerError, err.Error(), nil)
@@ -107,7 +109,7 @@ func UpdateSpecHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var spec TableSpec
+	var spec common.TableSpec
 	err = json.NewDecoder(r.Body).Decode(&spec)
 	if err != nil {
 		utils.CreateApiResponse(w, http.StatusBadRequest, err.Error(), nil)
@@ -141,7 +143,7 @@ func DeleteSpecHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RegisterRoutes() error {
-	conf := config.GetConfig()
+	conf := common.GetConfig()
 	router := conf.Router
 	router.HandleFunc("/api/v1/specs", GetAllSpecsHandler).Methods("GET")
 	router.HandleFunc("/api/v1/specs/{specId}", GetSpecHandler).Methods("GET")

@@ -2,19 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
-	"github.com/itaborai83/dsr/batches"
-	"github.com/itaborai83/dsr/config"
-	"github.com/itaborai83/dsr/datasets"
+	"github.com/itaborai83/dsr/common"
 	"github.com/itaborai83/dsr/specs"
 	"github.com/itaborai83/dsr/utils"
-)
-
-var (
-	logger *log.Logger
 )
 
 func registerServices() error {
@@ -24,42 +17,31 @@ func registerServices() error {
 		return fmt.Errorf("error registering spec services: %v", err)
 	}
 	// Batches
-	err = batches.RegisterServices()
-	if err != nil {
-		return fmt.Errorf("error registering batch services: %v", err)
-	}
 	// DataSets
-	err = datasets.RegisterServices()
-	if err != nil {
-		return fmt.Errorf("error registering data set services: %v", err)
-	}
-
 	return nil
 }
 
 func registerRoutes() error {
+	// healthcheck
+	conf := common.GetConfig()
+	conf.Router.HandleFunc("/healthcheck", HealthCheck)
 	// Specs
 	err := specs.RegisterRoutes()
 	if err != nil {
 		return fmt.Errorf("error registering spec handlers: %v", err)
 	}
 	// Batches
-	err = batches.RegisterRoutes()
-	if err != nil {
-		return fmt.Errorf("error registering batch handlers: %v", err)
-	}
 	// DataSets
-	err = datasets.RegisterRoutes()
-	if err != nil {
-		return fmt.Errorf("error registering data set handlers: %v", err)
-	}
-
 	return nil
 }
 
+func HealthCheck(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func main() {
-	conf := config.GetConfig()
-	logger = log.New(os.Stdout, "", log.LstdFlags)
+	conf := common.GetConfig()
+	logger := utils.GetLogger()
 
 	if !utils.DirExists(conf.DataDir) {
 		logger.Fatalf("data directory does not exist: %s\n", conf.DataDir)

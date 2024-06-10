@@ -1,7 +1,9 @@
-package config
+package common
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -9,6 +11,7 @@ import (
 const (
 	DEFAULT_HOST                 = "localhost"
 	DEFAULT_PORT                 = "8080"
+	DEFAULT_MAX_PARTITION_SIZE   = 10000
 	DEFAULT_DATA_DIR             = "data"
 	DEFAULT_SPECS_DIR            = "specs"
 	DEFAULT_BATCHES_DIR          = "batches"
@@ -20,6 +23,7 @@ const (
 	DEFAULT_RECONCILIATION_ENTRY = "reconciliation.json"
 	ENV_HOST                     = "HOST"
 	ENV_PORT                     = "PORT"
+	ENV_MAX_PARTITION_SIZE       = "MAX_PARTITION_SIZE"
 	ENV_DATA_DIR                 = "DATA_DIR"
 	ENV_SPECS_DIR                = "SPECS_DIR"
 	ENV_BATCHES_DIR              = "BATCHES_DIR"
@@ -35,6 +39,7 @@ type Config struct {
 	Host                string
 	Port                string
 	Router              *mux.Router
+	MaxPartitionSize    int
 	DataDir             string
 	SpecsDir            string
 	BatchesDir          string
@@ -44,12 +49,15 @@ type Config struct {
 	BatchEntry          string
 	DataSetEntry        string
 	ReconciliationEntry string
-	SpecRepo            interface{}
-	SpecService         interface{}
+	SpecRepo            SpecRepo
+	SpecValidator       SpecValidator
+	SpecService         SpecService
 	BatchRepo           interface{}
 	BatchService        interface{}
 	DataSetsRepo        interface{}
 	DataSetService      interface{}
+	ReconRepo           interface{}
+	ReconService        interface{}
 }
 
 func getEnv(key, defaultValue string) string {
@@ -60,11 +68,26 @@ func getEnv(key, defaultValue string) string {
 	return value
 }
 
+func getIntEnv(key string, defaultValue int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	// convert environment value to integer and return
+	val, err := strconv.Atoi(value)
+	if err != nil {
+		err := fmt.Errorf("error converting %s to integer: %v", key, err)
+		panic(err)
+	}
+	return val
+}
+
 func newConfig() *Config {
 	return &Config{
 		Host:                getEnv(ENV_HOST, DEFAULT_HOST),
 		Port:                getEnv(ENV_PORT, DEFAULT_PORT),
 		Router:              mux.NewRouter(),
+		MaxPartitionSize:    getIntEnv(ENV_MAX_PARTITION_SIZE, DEFAULT_MAX_PARTITION_SIZE),
 		DataDir:             getEnv(ENV_DATA_DIR, DEFAULT_DATA_DIR),
 		SpecsDir:            getEnv(ENV_SPECS_DIR, DEFAULT_SPECS_DIR),
 		BatchesDir:          getEnv(ENV_BATCHES_DIR, DEFAULT_BATCHES_DIR),
@@ -75,11 +98,13 @@ func newConfig() *Config {
 		DataSetEntry:        getEnv(ENV_DATASET_ENTRY, DEFAULT_DATASET_ENTRY),
 		ReconciliationEntry: getEnv(ENV_RECONCILIATION_ENTRY, DEFAULT_RECONCILIATION_ENTRY),
 		SpecRepo:            nil,
-		SpecService:         nil,
 		BatchRepo:           nil,
-		BatchService:        nil,
 		DataSetsRepo:        nil,
+		ReconRepo:           nil,
+		SpecService:         nil,
+		BatchService:        nil,
 		DataSetService:      nil,
+		ReconService:        nil,
 	}
 }
 

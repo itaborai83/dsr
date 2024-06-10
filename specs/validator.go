@@ -3,8 +3,13 @@ package specs
 import (
 	"fmt"
 
+	"github.com/itaborai83/dsr/common"
 	"github.com/itaborai83/dsr/utils"
 )
+
+type SpecValidator struct {
+	repo common.SpecRepo
+}
 
 const (
 	TABLE_INVALID_ID                 = "invalid id: %v"
@@ -24,30 +29,86 @@ const (
 	INVALID_CHANGE_CTRL_COLUMN_ERROR = "change control column %s not found in columns"
 )
 
-func isValidColumnType(t string) bool {
-	return t == ColumnTypeString ||
-		t == ColumnTypeInteger ||
-		t == ColumnTypeFloat ||
-		t == ColumnTypeDate ||
-		t == ColumnTypeDateTime ||
-		t == ColumnTypeBoolean
+func NewSpecValidator(repo common.SpecRepo) *SpecValidator {
+	return &SpecValidator{repo: repo}
 }
 
-func ValidateColumnSpec(spec ColumnSpec) error {
+func (s *SpecValidator) ValidateCreation(spec *common.TableSpec) error {
+	err := s.validateTableSpec(spec)
+	if err != nil {
+		return fmt.Errorf("error validating spec: %v", err)
+	}
+
+	exists, err := s.repo.DoesSpecExist(spec.Id)
+	if err != nil {
+		return fmt.Errorf("error checking if spec exists: %v", err)
+	}
+	if exists {
+		return fmt.Errorf("spec already exists: %s", spec.Id)
+	}
+	return nil
+}
+
+func (s *SpecValidator) ValidateUpdate(specId string, spec *common.TableSpec) error {
+	if specId != spec.Id {
+		return fmt.Errorf("spec id mismatch")
+	}
+
+	err := s.validateTableSpec(spec)
+	if err != nil {
+		return fmt.Errorf("error validating spec: %v", err)
+	}
+
+	exists, err := s.repo.DoesSpecExist(spec.Id)
+	if err != nil {
+		return fmt.Errorf("error checking if spec exists: %v", err)
+	}
+	if !exists {
+		return fmt.Errorf("spec does not exist: %s", spec.Id)
+	}
+
+	return nil
+}
+
+func (s *SpecValidator) ValidateDeletion(specId string) error {
+	err := utils.ValidateId(specId)
+	if err != nil {
+		return fmt.Errorf("error validating spec id: %v", err)
+	}
+	exists, err := s.repo.DoesSpecExist(specId)
+	if err != nil {
+		return fmt.Errorf("error checking if spec exists: %v", err)
+	}
+	if !exists {
+		return fmt.Errorf("spec does not exist: %s", specId)
+	}
+	return nil
+}
+
+func (s *SpecValidator) isValidColumnType(t string) bool {
+	return t == common.ColumnTypeString ||
+		t == common.ColumnTypeInteger ||
+		t == common.ColumnTypeFloat ||
+		t == common.ColumnTypeDate ||
+		t == common.ColumnTypeDateTime ||
+		t == common.ColumnTypeBoolean
+}
+
+func (s *SpecValidator) validateColumnSpec(spec common.ColumnSpec) error {
 	if spec.Name == "" {
 		return fmt.Errorf(EMPTY_COLUMN_NAME_ERROR)
 	}
 	if spec.Type == "" {
 		return fmt.Errorf(EMPTY_COLUMN_TYPE_ERROR)
 	}
-	if !isValidColumnType(spec.Type) {
+	if !s.isValidColumnType(spec.Type) {
 		return fmt.Errorf(INVALID_COLUMN_TYPE_ERROR, spec.Type)
 	}
 
 	return nil
 }
 
-func ValidateTableSpec(spec *TableSpec) error {
+func (s *SpecValidator) validateTableSpec(spec *common.TableSpec) error {
 	err := utils.ValidateId(spec.Id)
 	if err != nil {
 		return fmt.Errorf(TABLE_INVALID_ID, err)
@@ -63,7 +124,7 @@ func ValidateTableSpec(spec *TableSpec) error {
 	}
 	seenColumns := make(map[string]bool)
 	for i, col := range spec.Columns {
-		if err := ValidateColumnSpec(col); err != nil {
+		if err := s.validateColumnSpec(col); err != nil {
 			return fmt.Errorf(COLUMN_VALIDATION_ERROR, i, err)
 		}
 		if seenColumns[col.Name] {

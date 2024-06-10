@@ -4,21 +4,21 @@
     "spec_id": "spec-delegacoes-corporativas-v01",
     "data_set_id": "dataset-delegacoes-corporativas-v01-2024-06-01",
     "data": {
-        "tipoDelegacao":        ["CORPORATIVA", "CORPORATIVA"],
-        "codigoEmpresa":        ["1000", "1000"],
+        "tipoDelegacao":        ["CORPORATIVA", "CORPORATIVA", "CORPORATIVA"],
+        "codigoEmpresa":        ["1000", "1000", "1000"],
         
-        "chaveDelegador":       ["AAAA", "AAAA"],
-        "lotacaoDelegador":     ["AAAA/BBBB", "AAAA/BBBB"],
-        "matriculaDelegador":   ["00001", "00001"],
-        "nomeDelegador":        ["ZEZINHO DA SILVA"],
+        "chaveDelegador":       ["AAAA", "AAAA", "AAAA"],
+        "lotacaoDelegador":     ["AAAA/BBBB", "AAAA/BBBB", "AAAA/BBBB"],
+        "matriculaDelegador":   ["00001", "00001", "00001"],
+        "nomeDelegador":        ["ZEZINHO DA SILVA", "ZEZINHO DA SILVA", "ZEZINHO DA SILVA"],
         
-        "chaveDelegado":        ["BBBB", "BBBB"],
-        "lotacaoDelegado":      ["AAAA/BBBB", "AAAA/BBBB"],
-        "matriculaDelegado":    ["00002", "00002"],
-        "nomeDelegado":         ["JOAOZINHO DA SILVA"],
+        "chaveDelegado":        ["BBBB", "BBBB", "CCCC"],
+        "lotacaoDelegado":      ["AAAA/BBBB", "AAAA/BBBB", "AAAA/ZZZZ"],
+        "matriculaDelegado":    ["00002", "00002", "0003"],
+        "nomeDelegado":         ["JOAOZINHO DA SILVA", "JOAOZINHO DA SILVA", "DONATINHO CASCA FRIA"],
         
-        "documentoAutorizacao": ["1234567890", "2345678901"],
-        "dataInicio":           ["2018-01-01", "2018-01-01"],
-        "dataFim":              ["9999-12-31", "9999-12-31"]
+        "documentoAutorizacao": ["1234567890", "2345678901", "3456789012"],
+        "dataInicio":           ["2018-01-01", "2018-01-01", "2018-01-01"],
+        "dataFim":              ["9999-12-31", "9999-12-31", "9999-12-30"]
     }
 }

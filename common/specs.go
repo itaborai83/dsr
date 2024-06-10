@@ -1,4 +1,6 @@
-package specs
+package common
+
+import "fmt"
 
 const (
 	ColumnTypeString   = "STRING"
@@ -24,7 +26,50 @@ type TableSpec struct {
 	ChangeControlColumn string       `json:"change_control_column"`
 }
 
-func (c ColumnSpec) IsValidValue(value interface{}) bool {
+func (c *ColumnSpec) GetValue(rowIndex int, columnValues interface{}) (interface{}, error) {
+	// test if value is an array
+	_, ok := columnValues.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("value is not an array")
+	}
+	array := columnValues.([]interface{})
+	// test if rowIndex is within bounds
+	if rowIndex < 0 || rowIndex >= len(array) {
+		return nil, fmt.Errorf("row index out of bounds: %d", rowIndex)
+	}
+	// test if value conforms to column type
+
+	switch c.Type {
+	case ColumnTypeString, ColumnTypeDate, ColumnTypeDateTime:
+		value, ok := array[rowIndex].(string)
+		if !ok {
+			return nil, fmt.Errorf("value is not a string")
+		}
+		return value, nil
+	case ColumnTypeInteger:
+		value, ok := array[rowIndex].(int)
+		if !ok {
+			return nil, fmt.Errorf("value is not an integer")
+		}
+		return value, nil
+	case ColumnTypeFloat:
+		value, ok := array[rowIndex].(float64)
+		if !ok {
+			return nil, fmt.Errorf("value is not a float")
+		}
+		return value, nil
+	case ColumnTypeBoolean:
+		value, ok := array[rowIndex].(bool)
+		if !ok {
+			return nil, fmt.Errorf("value is not a boolean")
+		}
+		return value, nil
+	default:
+		return nil, fmt.Errorf("invalid column type: %s", c.Type)
+	}
+}
+
+func (c *ColumnSpec) IsValidValue(value interface{}) bool {
 	switch c.Type {
 	case ColumnTypeString:
 		_, ok := value.(string)
@@ -49,7 +94,7 @@ func (c ColumnSpec) IsValidValue(value interface{}) bool {
 	}
 }
 
-func (c ColumnSpec) ConformsTo(tableData interface{}) bool {
+func (c *ColumnSpec) ConformsTo(tableData interface{}) bool {
 	// see if table data is a map
 	data, ok := tableData.(map[string]interface{})
 	if !ok {
@@ -75,7 +120,24 @@ func (c ColumnSpec) ConformsTo(tableData interface{}) bool {
 	return ok
 }
 
-func (t TableSpec) GetColumn(name string) *ColumnSpec {
+func (t *TableSpec) GetColumnValue(columnName string, rowIndex int, tableData map[string]interface{}) (interface{}, error) {
+	// get the column
+	column := t.GetColumn(columnName)
+	if column == nil {
+		return nil, fmt.Errorf("column not found: %s", columnName)
+	}
+
+	// get the column values
+	columnValues, ok := tableData[columnName]
+	if !ok {
+		return nil, fmt.Errorf("column values not found for: %s", columnName)
+	}
+
+	// get the value
+	return column.GetValue(rowIndex, columnValues)
+}
+
+func (t *TableSpec) GetColumn(name string) *ColumnSpec {
 	for _, col := range t.Columns {
 		if col.Name == name {
 			return &col
@@ -84,7 +146,7 @@ func (t TableSpec) GetColumn(name string) *ColumnSpec {
 	return nil
 }
 
-func (t TableSpec) ConformsTo(data interface{}) bool {
+func (t *TableSpec) ConformsTo(data interface{}) bool {
 	// see if table data is a map
 	dataMap, ok := data.(map[string]interface{})
 	if !ok {
