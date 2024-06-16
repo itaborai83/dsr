@@ -95,6 +95,7 @@ func (d *DirRepo) getEntityPath(idStack []string) (string, error) {
 		pathElements = append(pathElements, repo.entityName)
 		pathElements = append(pathElements, idStack[idx])
 	}
+	pathElements = append(pathElements, d.entityName)
 	path := strings.Join(pathElements, "/")
 	return path, nil
 }

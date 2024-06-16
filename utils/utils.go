@@ -259,3 +259,32 @@ func CreateApiResponse(w http.ResponseWriter, statusCode int, message string, da
 	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(apiResponse)
 }
+
+func SortStringSlice(list []string) error {
+	if list == nil {
+		return fmt.Errorf("list is nil")
+	}
+	// sort strings in place using selection sort
+	for i := 0; i < len(list); i++ {
+		// find the minimum element in the unsorted part of the list
+		minIndex := i
+		for j := i + 1; j < len(list); j++ {
+			if list[j] < list[minIndex] {
+				minIndex = j
+			}
+		}
+		// swap the minimum element with the first element in the unsorted part
+		list[i], list[minIndex] = list[minIndex], list[i]
+	}
+	return nil
+}
+
+func RemoveStringFromSlice(list []string, item string) []string {
+	result := make([]string, 0)
+	for _, value := range list {
+		if value != item {
+			result = append(result, value)
+		}
+	}
+	return result
+}

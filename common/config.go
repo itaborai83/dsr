@@ -52,10 +52,11 @@ type Config struct {
 	SpecRepo            SpecRepo
 	SpecValidator       SpecValidator
 	SpecService         SpecService
-	BatchRepo           interface{}
-	BatchService        interface{}
-	DataSetsRepo        interface{}
-	DataSetService      interface{}
+	BatchRepo           BatchRepo
+	BatchValidator      BatchValidator
+	BatchService        BatchService
+	DataSetsRepo        DatasetRepo
+	DataSetService      DatasetService
 	ReconRepo           interface{}
 	ReconService        interface{}
 }
@@ -97,14 +98,6 @@ func newConfig() *Config {
 		BatchEntry:          getEnv(ENV_BATCH_ENTRY, DEFAULT_BATCH_ENTRY),
 		DataSetEntry:        getEnv(ENV_DATASET_ENTRY, DEFAULT_DATASET_ENTRY),
 		ReconciliationEntry: getEnv(ENV_RECONCILIATION_ENTRY, DEFAULT_RECONCILIATION_ENTRY),
-		SpecRepo:            nil,
-		BatchRepo:           nil,
-		DataSetsRepo:        nil,
-		ReconRepo:           nil,
-		SpecService:         nil,
-		BatchService:        nil,
-		DataSetService:      nil,
-		ReconService:        nil,
 	}
 }
 

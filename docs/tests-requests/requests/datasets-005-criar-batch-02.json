@@ -1,5 +1,5 @@
 {
-    "id": "batch-delegacoes-corporativas-v01-2024-06-01--batch-0002",
+    "id": "batch-0002",
     "name": "dataset-delegacoes-corporativas - batch 002",
     "spec_id": "spec-delegacoes-corporativas-v01",
     "data_set_id": "dataset-delegacoes-corporativas-v01-2024-06-01",
@@ -10,12 +10,12 @@
         "chaveDelegador":       ["AAAA", "AAAA"],
         "lotacaoDelegador":     ["AAAA/BBBB", "AAAA/BBBB"],
         "matriculaDelegador":   ["00001", "00001"],
-        "nomeDelegador":        ["ZEZINHO DA SILVA"],
+        "nomeDelegador":        ["ZEZINHO DA SILVA", "ZEZINHO DA SILVA"],
         
         "chaveDelegado":        ["CCCC", "CCCC"],
         "lotacaoDelegado":      ["AAAA/CCCC", "AAAA/CCCC"],
         "matriculaDelegado":    ["00003", "00003"],
-        "nomeDelegado":         ["MARIAZINHA DA SILVA"],
+        "nomeDelegado":         ["MARIAZINHA DA SILVA", "MARIAZINHA DA SILVA"],
         
         "documentoAutorizacao": ["1234567890", "2345678901"],
         "dataInicio":           ["2019-01-01", "2019-01-01"],

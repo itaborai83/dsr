@@ -74,7 +74,7 @@ Pause
 ## datasets-008-recuperar-batch.json
 $response = "responses/datasets-008-recuperar-batch.json"
 $method = "GET"
-$url = "http://localhost:8080/api/v1/batches/batch-delegacoes-corporativas-v01-2024-06-01--batch-0001"
+$url = "http://localhost:8080/api/v1/datasets/dataset-delegacoes-corporativas-v01-2024-06-01/batches/batch-0001"
 ocurl -X $method $url -o $response
 cat $response | jq
 

@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/itaborai83/dsr/batches"
 	"github.com/itaborai83/dsr/common"
+	"github.com/itaborai83/dsr/datasets"
 	"github.com/itaborai83/dsr/specs"
 	"github.com/itaborai83/dsr/utils"
 )
@@ -17,7 +19,15 @@ func registerServices() error {
 		return fmt.Errorf("error registering spec services: %v", err)
 	}
 	// Batches
+	err = batches.RegisterServices()
+	if err != nil {
+		return fmt.Errorf("error registering batch services: %v", err)
+	}
 	// DataSets
+	err = datasets.RegisterServices()
+	if err != nil {
+		return fmt.Errorf("error registering dataset services: %v", err)
+	}
 	return nil
 }
 
@@ -30,8 +40,12 @@ func registerRoutes() error {
 	if err != nil {
 		return fmt.Errorf("error registering spec handlers: %v", err)
 	}
-	// Batches
+	// Batches - as batches are a weak entity, the routes are registered in the datasets package
 	// DataSets
+	err = datasets.RegisterRoutes()
+	if err != nil {
+		return fmt.Errorf("error registering dataset handlers: %v", err)
+	}
 	return nil
 }
 
